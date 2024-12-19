@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import dotenv from "dotenv";
 
 import { User } from '../models/User';
 import { UserType } from '../types/userTypes';
@@ -8,6 +10,8 @@ import { signinData, signupData } from '../types/authTypes';
 import GenerateVerificationToken from '../utils/GenerateVerificationToken';
 import GenerateJwtTokenAndSetCookie from '../utils/GenerateJwtTokenAndSetCookie';
 
+
+dotenv.config();
 
 export const signup = async (req: Request, res: Response) => {
     const { email, username, password }: signupData = req.body;
@@ -96,7 +100,7 @@ export const signin = async (req: Request, res: Response) => {
             res.status(500).json({ success: false, message: "User signup failed", error: error.issues[0].message });
             return;
         } else {
-            res.status(500).json({ success: false, message: "Unknown error occurred during signup." });
+            res.status(500).json({ success: false, message: "Unknown error occurred during signin." });
             return;
         }
     }
@@ -105,4 +109,51 @@ export const signin = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
     res.clearCookie("token");
     res.status(200).json({ success: true, message: "User logged out successfully!" });
+}
+
+export const verifyEmail = async (req: Request, res: Response) => {
+    const { verificationToken } = req.params;
+    try {
+        
+
+    } catch (error) {
+        
+    }
+}
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    const { email } = req.body;
+    try {
+        
+        const user: UserType | null = await User.findOne({ email });
+        if(!user){
+            res.send(404).json({ success: false, message: "User not found!" });
+            return;
+        }
+
+        // ... generate a reset password token
+        const resetPasswordToken: string = crypto.randomBytes(20).toString('hex');
+        const resetPasswordExpiresAt: Date = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        user.resetPasswordToken = resetPasswordToken;
+        user.resetPasswordExpiresAt = resetPasswordExpiresAt;
+        await user.save();
+
+        const resetPasswordUrl = `${process.env.CLIENT_URL}/reset-password/${resetPasswordToken}`;
+
+        // ... send the reset password email
+
+        res.status(200).json({ success: true, message: "Reset password email sent successfully!" });
+
+    } catch (error) {
+
+        console.error("Error during signup:", error);
+        if (error instanceof Error) {
+            res.status(500).json({ success: false, message: "User signup failed", error});
+            return;
+        } else {
+            res.status(500).json({ success: false, message: "Unknown error occurred during reset password." });
+            return;
+        }
+    }
 }
