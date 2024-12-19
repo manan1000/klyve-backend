@@ -1,12 +1,11 @@
 import express from "express";
+import { signup } from "../controllers/auth.controller";
+
 
 const router = express.Router();
 
-router.post("/signup",signup);
-router.post("/signin",signin);
-router.post("/content",postContent);
-router.get("/content",getCcontent);
-router.delete("/content",deleteCcontent);
-router.get("/share/:shareLink",getSharedContent);
+router.post("/signup", signup);
+// router.post("/signin",signin);
+
 
 export default router;
