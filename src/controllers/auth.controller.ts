@@ -9,6 +9,7 @@ import { signupValidator } from '../validators/signupValidator';
 import { signinData, signupData } from '../types/authTypes';
 import GenerateVerificationToken from '../utils/GenerateVerificationToken';
 import GenerateJwtTokenAndSetCookie from '../utils/GenerateJwtTokenAndSetCookie';
+import { passwordValidator } from '../validators/passwordValidator';
 
 
 dotenv.config();
@@ -78,7 +79,7 @@ export const signin = async (req: Request, res: Response) => {
 
         // ... check if the password is correct
         const isPasswordCorrect: boolean = await bcrypt.compare(password, user.password);
-        if(!isPasswordCorrect){
+        if (!isPasswordCorrect) {
             res.status(401).json({ success: false, message: "Incorrect credentials!" });
             return;
         }
@@ -97,7 +98,7 @@ export const signin = async (req: Request, res: Response) => {
         console.error("Error during signup:", error);
         if (error instanceof Error) {
             //@ts-ignore
-            res.status(500).json({ success: false, message: "User signup failed", error: error.issues[0].message });
+            res.status(500).json({ success: false, message: "User signin failed", error: error.issues[0].message });
             return;
         } else {
             res.status(500).json({ success: false, message: "Unknown error occurred during signin." });
@@ -114,19 +115,19 @@ export const logout = (req: Request, res: Response) => {
 export const verifyEmail = async (req: Request, res: Response) => {
     const { verificationToken } = req.params;
     try {
-        
+
 
     } catch (error) {
-        
+
     }
 }
 
 export const forgotPassword = async (req: Request, res: Response) => {
     const { email } = req.body;
     try {
-        
+
         const user: UserType | null = await User.findOne({ email });
-        if(!user){
+        if (!user) {
             res.send(404).json({ success: false, message: "User not found!" });
             return;
         }
@@ -149,10 +150,54 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
         console.error("Error during signup:", error);
         if (error instanceof Error) {
-            res.status(500).json({ success: false, message: "User signup failed", error});
+            res.status(500).json({ success: false, message: "Forgot password failed", error });
             return;
         } else {
             res.status(500).json({ success: false, message: "Unknown error occurred during reset password." });
+            return;
+        }
+    }
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+    const token: string = req.params.token;
+    const password: string= req.body.password;
+
+    try {
+
+        passwordValidator.parse(password);
+
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpiresAt: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            res.send(404).json({ success: false, message: "Invalid or expired token!" });
+            return;
+        }
+
+        const hashedPassword: string = await bcrypt.hash(password, 12);
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpiresAt = undefined;
+        await user.save();
+
+
+        //// send password reset successful email ////
+
+
+        res.status(200).json({ success: true, message: "Password reset successfully!" });
+
+    } catch (error) {
+
+        console.error("Error during signup:", error);
+        if (error instanceof Error) {
+            //@ts-ignore
+            res.status(500).json({ success: false, message: "User password reset failed", error: error.issues[0].message });
+            return;
+        } else {
+            res.status(500).json({ success: false, message: "Unknown error occurred during resetting password." });
             return;
         }
     }
