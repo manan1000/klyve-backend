@@ -1,6 +1,6 @@
 import mongoose, { Types } from "mongoose";
 
-export const contentTypes = ["image", "video", "article", "audio"];
+export const contentTypes = ["youtube", "twitter", "article", "audio"];
 
 const contentSchema = new mongoose.Schema({
     title: { type: String },
