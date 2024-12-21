@@ -53,3 +53,23 @@ export const postContent = async (req: Request, res: Response) => {
     }
 
 }
+
+export const getContent = async (req: Request, res: Response) => {
+    try {
+        //@ts-ignore
+        const content = await Content.find({userId: req.userId})
+            .populate("tags", "title-_id")
+            .lean();
+
+        const transformedContent = content.map(item => ({
+            ...item,
+            tags: item.tags.map((tag: any) => tag.title)
+        }));
+        
+        res.status(200).json(transformedContent);
+        return;
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error});
+        return;
+    }
+}
