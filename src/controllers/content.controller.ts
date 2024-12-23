@@ -1,9 +1,14 @@
+import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { postContentValidator } from "../validators/postContentValidator";
-import { contentType, postContentData } from "../types/contentTypes";
+import {  postContentData } from "../types/contentTypes";
 import { Tag } from "../models/Tag";
 import { Content } from "../models/Content";
 import { Types } from "mongoose";
+import { Link } from "../models/Link";
+import { GenerateNewHashForLink } from "../utils/GenerateNewHashForLink";
+
+dotenv.config();
 
 export const postContent = async (req: Request, res: Response) => {
     const { title, type, link, tags }: postContentData = req.body;
@@ -76,20 +81,69 @@ export const getContent = async (req: Request, res: Response) => {
 
 export const deleteContent = async (req: Request, res: Response) => {
     try {
-        
+
         const { id } = req.body;
         //@ts-ignore
         const userId = req.userId;
         const content = await Content.findOne({ _id: id, userId });
-        if(!content){
-            res.status(404).json({message:"Content not found"});
+        if (!content) {
+            res.status(404).json({ message: "Content not found" });
             return;
         }
 
         await content.deleteOne();
-        res.status(200).json({message:"Content deleted successfully"});
+        res.status(200).json({ message: "Content deleted successfully" });
     } catch (error) {
         res.status(500).json({ message: "Server error", error });
         return;
+    }
+}
+
+
+export const createShareLink = async (req: Request, res: Response) => {
+    const share: boolean = req.body.share;
+    //@ts-ignore
+    const userId = req.userId;
+    try {
+        if (share) {
+            
+            const linkAlreadyExists = await Link.findOne({ userId });
+            
+            if(linkAlreadyExists) {
+                res.status(200).json({message: "Link already exists", link: `${process.env.CLIENT_URL}/share/${linkAlreadyExists.hash}`});
+                return;
+            }
+            
+            const link = new Link({
+                hash: GenerateNewHashForLink(20),
+                userId
+            });
+            
+            await link.save();
+            res.status(201).json({ message: "Link created successfully", link: `${process.env.CLIENT_URL}/share/${link.hash}` });
+
+        } else {
+
+            const link = await Link.findOne({ userId });
+            if(!link) {
+                res.status(404).json({message: "Link not found"});
+                return;
+            }
+
+            await link.deleteOne();
+            res.status(200).json({message: "Link deleted successfully"});
+            return;
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+        return;
+    }
+}
+
+export const getSharedContent = async (req: Request, res: Response) => {
+    try {
+
+    } catch (error) {
+
     }
 }
