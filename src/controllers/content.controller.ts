@@ -2,10 +2,11 @@ import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { postContentValidator } from "../validators/postContentValidator";
 import {  postContentData } from "../types/contentTypes";
-import { Tag } from "../models/Tag";
+import { User } from "../models/User";
 import { Content } from "../models/Content";
-import { Types } from "mongoose";
+import { Tag } from "../models/Tag";
 import { Link } from "../models/Link";
+import { Types } from "mongoose";
 import { GenerateNewHashForLink } from "../utils/GenerateNewHashForLink";
 
 dotenv.config();
@@ -153,7 +154,13 @@ export const getSharedContent = async (req: Request, res: Response) => {
             ...item,
             tags: item.tags.map((tag: any) => tag.title)
         }));
-        res.status(200).json(transformedContent);
+
+        const user = await User.findOne({ _id: link.userId });
+        if (!user) {
+            res.status(404).json({ message: "User not found" });
+            return;
+        }
+        res.status(200).json({ username: user.username, content: transformedContent });
         return;
     } catch (error) {
         res.status(500).json({ message: "Server error", error });
