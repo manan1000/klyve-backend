@@ -43,12 +43,12 @@ export const postContent = async (req: Request, res: Response) => {
         if (error instanceof Error && error.name === "ZodError") {
             // Handle Zod validation errors
             //@ts-ignore
-            res.status(400).json({ message: "Validation error", error: error.issues[0].message});
+            res.status(400).json({ message: "Validation error", error: error.issues[0].message });
             return;
         }
 
         console.error("Error adding content:", error);
-        res.status(500).json({ message: "Server error", error});
+        res.status(500).json({ message: "Server error", error });
         return;
     }
 
@@ -57,7 +57,7 @@ export const postContent = async (req: Request, res: Response) => {
 export const getContent = async (req: Request, res: Response) => {
     try {
         //@ts-ignore
-        const content = await Content.find({userId: req.userId})
+        const content = await Content.find({ userId: req.userId })
             .populate("tags", "title-_id")
             .lean();
 
@@ -65,11 +65,31 @@ export const getContent = async (req: Request, res: Response) => {
             ...item,
             tags: item.tags.map((tag: any) => tag.title)
         }));
-        
+
         res.status(200).json(transformedContent);
         return;
     } catch (error) {
-        res.status(500).json({ message: "Server error", error});
+        res.status(500).json({ message: "Server error", error });
+        return;
+    }
+}
+
+export const deleteContent = async (req: Request, res: Response) => {
+    try {
+        
+        const { id } = req.body;
+        //@ts-ignore
+        const userId = req.userId;
+        const content = await Content.findOne({ _id: id, userId });
+        if(!content){
+            res.status(404).json({message:"Content not found"});
+            return;
+        }
+
+        await content.deleteOne();
+        res.status(200).json({message:"Content deleted successfully"});
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
         return;
     }
 }
