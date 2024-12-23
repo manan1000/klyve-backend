@@ -8,7 +8,7 @@ router.post("/content", authenticateRoute, postContent);
 router.get("/content", authenticateRoute, getContent);
 router.delete("/content", authenticateRoute, deleteContent);
 router.post("/share", authenticateRoute, createShareLink);
-// router.post("/share/:shareLink",getSharedContent);
+router.get("/share/:shareLink",getSharedContent);
 
 
 export default router;

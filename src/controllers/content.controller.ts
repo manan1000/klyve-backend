@@ -99,7 +99,6 @@ export const deleteContent = async (req: Request, res: Response) => {
     }
 }
 
-
 export const createShareLink = async (req: Request, res: Response) => {
     const share: boolean = req.body.share;
     //@ts-ignore
@@ -142,8 +141,22 @@ export const createShareLink = async (req: Request, res: Response) => {
 
 export const getSharedContent = async (req: Request, res: Response) => {
     try {
+        const { shareLink } = req.params;
+        const link = await Link.findOne({ hash: shareLink });
+        if(!link) {
+            res.status(404).json({message: "Link not found"});
+            return;
+        }
 
+        const content = await Content.find({ userId: link.userId }).populate("tags", "title-_id").lean();
+        const transformedContent = content.map(item => ({
+            ...item,
+            tags: item.tags.map((tag: any) => tag.title)
+        }));
+        res.status(200).json(transformedContent);
+        return;
     } catch (error) {
-
+        res.status(500).json({ message: "Server error", error });
+        return;
     }
 }
